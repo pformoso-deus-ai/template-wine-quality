@@ -1,0 +1,73 @@
+schema: '2.0'
+stages:
+  raw_dataset_creation:
+    cmd: python src/data/load_data.py --config=params.yaml
+    deps:
+    - path: data/external/WineQT.csv
+      hash: md5
+      md5: e2e57e4c41e6ee0213fb12e5a70f4bfb
+      size: 78057
+    - path: src/data/load_data.py
+      hash: md5
+      md5: e4cb5a18d5f477d48f9e7d86516b481b
+      size: 1412
+    outs:
+    - path: data/raw/train.csv
+      hash: md5
+      md5: bd2d40bb2a460615801f55861e4098fc
+      size: 66889
+  split_data:
+    cmd: python src/data/split_data.py --config=params.yaml
+    deps:
+    - path: data/raw/train.csv
+      hash: md5
+      md5: bd2d40bb2a460615801f55861e4098fc
+      size: 66889
+    - path: src/data/split_data.py
+      hash: md5
+      md5: 64a0db24f26b14498dc97e714cbf6088
+      size: 1364
+    outs:
+    - path: data/processed/wine_test.csv
+      hash: md5
+      md5: b4d190d2284b31fdf07b6981c554158d
+      size: 20250
+    - path: data/processed/wine_train.csv
+      hash: md5
+      md5: 19f93698f7ede5ecfa72b56915c06f72
+      size: 46785
+  model_train:
+    cmd: python src/models/train_model.py --config=params.yaml
+    deps:
+    - path: data/processed/wine_test.csv
+      hash: md5
+      md5: b4d190d2284b31fdf07b6981c554158d
+      size: 20250
+    - path: data/processed/wine_train.csv
+      hash: md5
+      md5: 19f93698f7ede5ecfa72b56915c06f72
+      size: 46785
+    - path: src/models/train_model.py
+      hash: md5
+      md5: dbd948e568fa8fff3a25d413d3810c69
+      size: 3824
+    params:
+      params.yaml:
+        random_forest.max_depth: 10
+        random_forest.n_estimators: 30
+  log_production_model:
+    cmd: python src/models/production_model_selection.py --config=params.yaml
+    deps:
+    - path: src/models/production_model_selection.py
+      hash: md5
+      md5: 1463709e3596de82605619ab7322d24f
+      size: 1999
+    params:
+      params.yaml:
+        random_forest.max_depth: 10
+        random_forest.n_estimators: 30
+    outs:
+    - path: models/model.joblib
+      hash: md5
+      md5: ae731190dae5a163f22e1856e2d5a7d9
+      size: 847858
