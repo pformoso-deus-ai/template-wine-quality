@@ -27,33 +27,33 @@ def log_production_model(config_path):
         if mv["run_id"] == max_accuracy_run_id:
             current_version = mv["version"]
             logged_model = mv["source"]
+            alias = f"{model_name}_{current_version}"        
 
-            client.transition_model_version_stage(
-                name=model_name,
-                version=current_version,
-                stage="Production"
-            )
-            
+            client.set_registered_model_alias(model_name, alias, current_version)   
+
             loaded_model = mlflow.pyfunc.load_model(logged_model)
             joblib.dump(loaded_model, model_dir)
 
         else:
             current_version = mv["version"]
-            client.transition_model_version_stage(
-                name=model_name,
-                version=current_version,
-                stage="Staging"
-            )        
+            
+            latest_mv = client.get_latest_versions(model_name, stages=["Staging"])[0]
+            alias = f"{model_name}_{current_version}"
+            client.set_registered_model_alias(model_name, alias, latest_mv.version)                          
 
 def print_run_info(runs):
     for r in runs:
         print(f"run_id: {r.info.run_id}")
         print(f"lifecycle_stage: {r.info.lifecycle_stage}")
-        print(f"metrics: {r.data.metrics}")
-
+        print(f"metrics: {r.data.metrics}")                
+        
         # Exclude mlflow system tags
         tags = {k: v for k, v in r.data.tags.items() if not k.startswith("mlflow.")}
         print(f"tags: {tags}")
+
+
+
+
 
 if __name__ == '__main__':
     args = argparse.ArgumentParser()
